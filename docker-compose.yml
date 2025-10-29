@@ -25,6 +25,7 @@ services:
       - FILE_STORAGE_LOCAL_ROOT_DIR=/var/lib/outline/data
       - FORCE_HTTPS=true 
       - PGSSLMODE=${PGSSLMODE}
+      - HOST=${HOST}
     volumes:
       - outline-data:/var/lib/outline/data
     labels:
