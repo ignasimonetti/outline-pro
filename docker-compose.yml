@@ -1,69 +1,44 @@
-services:
-  outline:
-    image: docker.getoutline.com/outlinewiki/outline:latest
-    env_file: ./docker.env
-    expose:
-      - "3000"
+version: "3.8"
+    
+     services:
+       outline:
+         image: docker.getoutline.com/outlinewiki/outline:latest
+         restart: always
+         depends_on:
+           - postgres
+           - redis
+        environment:
+          - NODE_ENV=production
+          - SECRET_KEY=${SECRET_KEY}
+          - UTILS_SECRET=${UTILS_SECRET}
+          - DATABASE_URL=${DATABASE_URL}
+          - REDIS_URL=${REDIS_URL}
+          - URL=${URL}
+          - PORT=3000
+          - FILE_STORAGE=local
+          - FILE_STORAGE_LOCAL_ROOT_DIR=/var/lib/outline/data
+          - FORCE_HTTPS=true
+        volumes:
+          - outline-data:/var/lib/outline/data
+    
+      postgres:
+        image: postgres:15-alpine
+        restart: always
+        environment:
+          - POSTGRES_USER=${POSTGRES_USER}
+          - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          - POSTGRES_DB=${POSTGRES_DB}
+        volumes:
+          - postgres-data:/var/lib/postgresql/data
+    
+      redis:
+        image: redis:7-alpine
+        restart: always
+        volumes:
+          - redis-data:/data
+    
     volumes:
-      - storage-data:/var/lib/outline/data
-    depends_on:
-      - postgres
-      - redis
+      postgres-data:
+      redis-data:
+      outline-data:
 
-  redis:
-    image: redis
-    env_file: ./docker.env
-    expose:
-      - "6379"
-    volumes:
-      - ./redis.conf:/redis.conf
-    command: ["redis-server", "/redis.conf"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 30s
-      retries: 3
-
-  postgres:
-    image: postgres
-    env_file: ./docker.env
-    expose:
-      - "5432"
-    volumes:
-      - database-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "outline", "-U", "user"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    environment:
-      POSTGRES_USER: 'user'
-      POSTGRES_PASSWORD: 'pass'
-      POSTGRES_DB: 'outline'
-
-  https-portal:
-    image: steveltn/https-portal
-    env_file: ./docker.env
-    ports:
-      - '80:80'
-      - '443:443'
-    links:
-      - outline
-    restart: always
-    volumes:
-      - https-portal-data:/var/lib/https-portal
-    healthcheck:
-      test: ["CMD", "service", "nginx", "status"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    environment:
-      DOMAINS: 'docs.mycompany.com -> http://outline:3000'
-      STAGE: 'production'
-      WEBSOCKET: 'true'
-      CLIENT_MAX_BODY_SIZE: '0'
-
-volumes:
-  https-portal-data:
-  storage-data:
-  database-data:
