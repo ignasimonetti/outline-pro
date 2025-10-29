@@ -21,6 +21,13 @@ services:
       - PGSSLMODE=${PGSSLMODE}
     volumes:
       - outline-data:/var/lib/outline/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.outline.rule=Host(`outline.manta.com.ar`)"
+      - "traefik.http.routers.outline.entrypoints=https"
+      - "traefik.http.routers.outline.tls=true"
+      - "traefik.http.routers.outline.tls.certresolver=letsencrypt"
+      - "traefik.http.services.outline.loadbalancer.server.port=3000"
 
   postgres:
     image: postgres:15-alpine
